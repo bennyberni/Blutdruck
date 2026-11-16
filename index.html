@@ -111,7 +111,14 @@ function norm(d){
  return {app:'blutdruck',v:1,entries:out};
 }
 let state=(()=>{try{const t=localStorage.getItem(KEY);if(t)return norm(JSON.parse(t))}catch(e){}return norm(null)})();
-function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){toast('Speichern nicht möglich (Speicher gesperrt oder voll)')}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){toast('Speichern nicht möglich (Speicher gesperrt oder voll)')}bk.changed=Date.now();bkSave()}
+/* ---------- Backup-Erinnerung ---------- */
+const BKEY='blutdruck-backup-v1';
+const bk=(()=>{try{const o=JSON.parse(localStorage.getItem(BKEY)||'{}');return o&&typeof o==='object'?o:{}}catch(e){return {}}})();
+if(bk.remind==null)bk.remind=true;
+function bkSave(){try{localStorage.setItem(BKEY,JSON.stringify(bk))}catch(e){}}
+const lastBkTxt=()=>{if(!bk.last)return 'noch nie';const d=new Date(bk.last),k=x=>new Date(x.getFullYear(),x.getMonth(),x.getDate()),n=Math.round((k(new Date())-k(d))/864e5);return n<=0?'heute':n===1?'gestern':`vor ${n} Tagen (${d.toLocaleDateString('de-DE')})`};
+const backupDue=()=>bk.remind&&state.entries.length>0&&(!bk.last||(bk.changed||0)>bk.last);
 const ui={range:'30'};
 const snap=()=>JSON.stringify(state);
 const restore=s=>{state=norm(JSON.parse(s));save();render()};
@@ -227,7 +234,11 @@ function exportCsv(){
  download(`blutdruck-${nowTs().slice(0,10)}.csv`,'text/csv;charset=utf-8','﻿'+rows.join('\n'));
  toast('Tabelle wurde heruntergeladen');
 }
-function exportBackup(){download(`blutdruck-backup-${nowTs().slice(0,10)}.json`,'application/json',JSON.stringify(state,null,1));toast('Backup wurde heruntergeladen')}
+function exportBackup(){download(`blutdruck-backup-${nowTs().slice(0,10)}.json`,'application/json',JSON.stringify(state,null,1));bk.last=Date.now();bkSave();toast('Backup wurde heruntergeladen')}
+function checkBackup(){
+ if(sheetEl||document.visibilityState==='hidden'||!backupDue())return;
+ openSheet(`<h3>Zeit für ein Backup</h3><p>Seit deinem letzten Backup hast du Messwerte geändert. Letztes Backup: <b>${esc(lastBkTxt())}</b>.</p><p style="font-size:.88rem">Ohne Backup gehen deine Daten verloren, wenn du die App löschst oder die Browserdaten entfernst.</p><div class="btns"><button class="btn" data-act="close">Später</button><button class="btn primary" data-act="backup">Backup speichern</button></div>`);
+}
 function doPrint(){
  const E=state.entries;if(!E.length){toast('Noch keine Messungen vorhanden');return}
  const a7=avg(since(7)),a30=avg(since(30)),aa=avg(E);
@@ -267,11 +278,12 @@ function menuSheet(){
  openSheet(`<h3>Menü</h3><div class="list" style="box-shadow:none">
  <button class="mrow" data-act="csv"><span class="rt"><b>Tabelle für die Praxis (CSV)</b><small>Öffnet sich in Excel</small></span></button>
  <button class="mrow" data-act="print"><span class="rt"><b>Drucken oder als PDF speichern</b><small>Alle Messungen als Liste</small></span></button>
- <button class="mrow" data-act="backup"><span class="rt"><b>Backup speichern</b><small>Alle Daten als Datei (.json)</small></span></button>
+ <button class="mrow" data-act="backup"><span class="rt"><b>Backup speichern</b><small>Als Datei (.json) · letztes: ${esc(lastBkTxt())}</small></span></button>
+ <button class="mrow" data-act="bkToggle"><span class="rt"><b>Backup-Erinnerung</b><small>Bei jedem Öffnen, solange nicht gesichert</small></span><b style="color:${bk.remind?'var(--accent)':'var(--muted)'}">${bk.remind?'An':'Aus'}</b></button>
  <button class="mrow" data-act="import"><span class="rt"><b>Daten importieren</b><small>Backup-Datei auswählen</small></span></button>
  <button class="mrow" data-act="paste"><span class="rt"><b>Daten einfügen</b><small>Dateiinhalt als Text einfügen</small></span></button>
  <button class="mrow bad" data-act="wipe"><span class="rt"><b>Alle Daten löschen</b><small>Entfernt alles von diesem Gerät</small></span></button></div>
- <p class="note" style="margin-top:14px">Deine Messwerte werden nur lokal in dieser App auf deinem Gerät gespeichert – keine Anmeldung, keine Cloud. Beim Deinstallieren oder Löschen der Browserdaten sind sie weg, speichere deshalb ab und zu ein Backup.</p><p class="note" style="text-align:center;margin-top:0">Version 1</p>`);
+ <p class="note" style="margin-top:14px">Deine Messwerte werden nur lokal in dieser App auf deinem Gerät gespeichert – keine Anmeldung, keine Cloud. Beim Deinstallieren oder Löschen der Browserdaten sind sie weg, speichere deshalb ab und zu ein Backup.</p><p class="note" style="text-align:center;margin-top:0">Version 2</p>`);
 }
 
 /* ---------- Aktionen ---------- */
@@ -299,6 +311,7 @@ const A={
  csv:()=>closeSheet(exportCsv),
  print:()=>doPrint(),
  backup:()=>closeSheet(exportBackup),
+ bkToggle:()=>{bk.remind=!bk.remind;bkSave();menuSheet();toast(bk.remind?'Erinnerung ist an':'Erinnerung ist aus')},
  import:()=>closeSheet(pickFile),
  paste:()=>closeSheet(pasteSheet),
  pasteGo:()=>{const v=sv('#paste').value;closeSheet(()=>importText(v,{name:'(eingefügter Text)',size:v.length}))},
@@ -313,6 +326,9 @@ window.addEventListener('popstate',()=>{
  if(hs().sheet){try{history.replaceState({sheet:false},'')}catch(x){}}
 });
 render();
+setTimeout(checkBackup,700);
+let hiddenAt=0;
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){if(Date.now()-hiddenAt>60000)setTimeout(checkBackup,500)}else hiddenAt=Date.now()});
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
 })();
 </script>
