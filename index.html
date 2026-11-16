@@ -118,7 +118,7 @@ const bk=(()=>{try{const o=JSON.parse(localStorage.getItem(BKEY)||'{}');return o
 if(bk.remind==null)bk.remind=true;
 function bkSave(){try{localStorage.setItem(BKEY,JSON.stringify(bk))}catch(e){}}
 const lastBkTxt=()=>{if(!bk.last)return 'noch nie';const d=new Date(bk.last),k=x=>new Date(x.getFullYear(),x.getMonth(),x.getDate()),n=Math.round((k(new Date())-k(d))/864e5);return n<=0?'heute':n===1?'gestern':`vor ${n} Tagen (${d.toLocaleDateString('de-DE')})`};
-const backupDue=()=>bk.remind&&state.entries.length>0&&(!bk.last||(bk.changed||0)>bk.last);
+const backupDue=()=>bk.remind&&state.entries.length>0;
 const ui={range:'30'};
 const snap=()=>JSON.stringify(state);
 const restore=s=>{state=norm(JSON.parse(s));save();render()};
@@ -234,10 +234,22 @@ function exportCsv(){
  download(`blutdruck-${nowTs().slice(0,10)}.csv`,'text/csv;charset=utf-8','﻿'+rows.join('\n'));
  toast('Tabelle wurde heruntergeladen');
 }
-function exportBackup(){download(`blutdruck-backup-${nowTs().slice(0,10)}.json`,'application/json',JSON.stringify(state,null,1));bk.last=Date.now();bkSave();toast('Backup wurde heruntergeladen')}
+async function saveFile(name,text,mime){
+ const blob=new Blob([text],{type:mime});
+ if(window.showSaveFilePicker){
+  try{const h=await window.showSaveFilePicker({suggestedName:name,types:[{description:'Backup-Datei',accept:{[mime]:['.json']}}]});const w=await h.createWritable();await w.write(blob);await w.close();return 'saved'}
+  catch(e){if(e&&e.name==='AbortError')return 'cancel'}
+ }
+ try{const f=new File([blob],name,{type:mime});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:name});return 'shared'}}
+ catch(e){if(e&&e.name==='AbortError')return 'cancel'}
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+ return 'downloaded';
+}
+const SAVED_MSG={saved:'Backup wurde gespeichert',shared:'Backup wurde weitergegeben',downloaded:'Backup liegt im Download-Ordner'};
+async function exportBackup(){const r=await saveFile(`blutdruck-backup-${nowTs().slice(0,10)}.json`,JSON.stringify(state,null,1),'application/json');if(r==='cancel')return;bk.last=Date.now();bkSave();toast(SAVED_MSG[r])}
 function checkBackup(){
  if(sheetEl||document.visibilityState==='hidden'||!backupDue())return;
- openSheet(`<h3>Zeit für ein Backup</h3><p>Seit deinem letzten Backup hast du Messwerte geändert. Letztes Backup: <b>${esc(lastBkTxt())}</b>.</p><p style="font-size:.88rem">Ohne Backup gehen deine Daten verloren, wenn du die App löschst oder die Browserdaten entfernst.</p><div class="btns"><button class="btn" data-act="close">Später</button><button class="btn primary" data-act="backup">Backup speichern</button></div>`);
+ openSheet(`<h3>Zeit für ein Backup</h3><p>Möchtest du jetzt deine Messwerte sichern? Letztes Backup: <b>${esc(lastBkTxt())}</b>${bk.last&&(bk.changed||0)<=bk.last?', seitdem keine Änderungen':''}.</p><p style="font-size:.88rem">Ohne Backup gehen deine Daten verloren, wenn du die App löschst oder die Browserdaten entfernst.</p><div class="btns"><button class="btn" data-act="close">Später</button><button class="btn primary" data-act="backup">Backup speichern</button></div>`);
 }
 function doPrint(){
  const E=state.entries;if(!E.length){toast('Noch keine Messungen vorhanden');return}
@@ -278,12 +290,12 @@ function menuSheet(){
  openSheet(`<h3>Menü</h3><div class="list" style="box-shadow:none">
  <button class="mrow" data-act="csv"><span class="rt"><b>Tabelle für die Praxis (CSV)</b><small>Öffnet sich in Excel</small></span></button>
  <button class="mrow" data-act="print"><span class="rt"><b>Drucken oder als PDF speichern</b><small>Alle Messungen als Liste</small></span></button>
- <button class="mrow" data-act="backup"><span class="rt"><b>Backup speichern</b><small>Als Datei (.json) · letztes: ${esc(lastBkTxt())}</small></span></button>
- <button class="mrow" data-act="bkToggle"><span class="rt"><b>Backup-Erinnerung</b><small>Bei jedem Öffnen, solange nicht gesichert</small></span><b style="color:${bk.remind?'var(--accent)':'var(--muted)'}">${bk.remind?'An':'Aus'}</b></button>
+ <button class="mrow" data-act="backup"><span class="rt"><b>Backup speichern</b><small>Speicherort wählen (.json) · letztes: ${esc(lastBkTxt())}</small></span></button>
+ <button class="mrow" data-act="bkToggle"><span class="rt"><b>Backup-Erinnerung</b><small>Fragt bei jedem Öffnen der App nach</small></span><b style="color:${bk.remind?'var(--accent)':'var(--muted)'}">${bk.remind?'An':'Aus'}</b></button>
  <button class="mrow" data-act="import"><span class="rt"><b>Daten importieren</b><small>Backup-Datei auswählen</small></span></button>
  <button class="mrow" data-act="paste"><span class="rt"><b>Daten einfügen</b><small>Dateiinhalt als Text einfügen</small></span></button>
  <button class="mrow bad" data-act="wipe"><span class="rt"><b>Alle Daten löschen</b><small>Entfernt alles von diesem Gerät</small></span></button></div>
- <p class="note" style="margin-top:14px">Deine Messwerte werden nur lokal in dieser App auf deinem Gerät gespeichert – keine Anmeldung, keine Cloud. Beim Deinstallieren oder Löschen der Browserdaten sind sie weg, speichere deshalb ab und zu ein Backup.</p><p class="note" style="text-align:center;margin-top:0">Version 2</p>`);
+ <p class="note" style="margin-top:14px">Deine Messwerte werden nur lokal in dieser App auf deinem Gerät gespeichert – keine Anmeldung, keine Cloud. Beim Deinstallieren oder Löschen der Browserdaten sind sie weg, speichere deshalb ab und zu ein Backup.</p><p class="note" style="text-align:center;margin-top:0">Version 4</p>`);
 }
 
 /* ---------- Aktionen ---------- */
@@ -310,7 +322,7 @@ const A={
  del:t=>{const s=snap();state.entries=state.entries.filter(x=>x.id!==t.dataset.id);save();render();closeSheet();toast('Messung gelöscht',()=>restore(s))},
  csv:()=>closeSheet(exportCsv),
  print:()=>doPrint(),
- backup:()=>closeSheet(exportBackup),
+ backup:()=>{exportBackup();closeSheet()},
  bkToggle:()=>{bk.remind=!bk.remind;bkSave();menuSheet();toast(bk.remind?'Erinnerung ist an':'Erinnerung ist aus')},
  import:()=>closeSheet(pickFile),
  paste:()=>closeSheet(pasteSheet),
