@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#be123c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#140b0e" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Blutdruck">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Blutdruck</title>
+<style>
+:root{--bg:#fbf6f7;--surface:#fff;--s2:#f6ecef;--ink:#2a1218;--muted:#7a6168;--line:#ecdfe3;--accent:#be123c;--on:#fff;--dia:#2563eb;--shadow:0 6px 22px rgba(60,10,25,.07);
+--c-opt:#15803d;--c-norm:#0f766e;--c-hn:#b45309;--c-hi:#c2410c;--c-hi2:#b91c1c;--c-hi3:#7f1d1d;--c-low:#1d4ed8;color-scheme:light dark}
+@media(prefers-color-scheme:dark){:root{--bg:#140b0e;--surface:#1f1217;--s2:#2a1a20;--ink:#f6e9ed;--muted:#b99aa3;--line:#3a2830;--accent:#fb7185;--on:#3b0a16;--dia:#60a5fa;--shadow:none;
+--c-opt:#4ade80;--c-norm:#2dd4bf;--c-hn:#fbbf24;--c-hi:#fb923c;--c-hi2:#f87171;--c-hi3:#fca5a5;--c-low:#93c5fd}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+input{font:inherit;color:var(--ink)}
+#app{max-width:640px;margin:0 auto;min-height:100dvh;padding:calc(env(safe-area-inset-top) + 8px) 14px calc(env(safe-area-inset-bottom) + 100px)}
+.hdr{display:flex;align-items:center;gap:8px;min-height:52px;margin-bottom:6px}.hdr h1{flex:1;margin:0;font-size:1.5rem;letter-spacing:-.02em}
+.ib{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--surface);box-shadow:var(--shadow);border:1px solid var(--line)}.ib svg{width:22px;height:22px}
+.hero{border-radius:24px;padding:20px 20px 18px;color:#fff;background:linear-gradient(135deg,#be123c,#881337);box-shadow:0 14px 34px rgba(190,18,60,.25);margin-bottom:14px}
+@media(prefers-color-scheme:dark){.hero{background:linear-gradient(135deg,#9f1239,#4c0519);box-shadow:none}}
+.hero .lbl{opacity:.88;font-size:.88rem}.hero .big{font-size:3.1rem;font-weight:800;letter-spacing:-.03em;line-height:1.1;margin:4px 0 8px;font-variant-numeric:tabular-nums}.hero .big small{font-size:1rem;font-weight:600;opacity:.8;letter-spacing:0;margin-left:6px}
+.hero .row2{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.hero .pill{background:rgba(255,255,255,.2);border-radius:99px;padding:5px 12px;font-size:.84rem;font-weight:650}
+.hero.empty{text-align:center;padding:26px 20px}.hero.empty .big{font-size:1.4rem;margin:6px 0 14px}.hero.empty button{background:#fff;color:#9f1239;font-weight:800;padding:13px 22px;border-radius:15px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow)}
+.kpi{padding:13px 12px}.kpi .k{font-size:.74rem;color:var(--muted);font-weight:650}.kpi .v{font-size:1.15rem;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}.kpi .s{font-size:.72rem;color:var(--muted);margin-top:2px}
+.chartcard{padding:14px 10px 10px;margin-bottom:6px}
+.chartcard .top{display:flex;justify-content:space-between;align-items:center;padding:0 6px 8px;gap:8px}.chartcard h2{font-size:1rem;margin:0}
+.seg{display:inline-grid;grid-auto-flow:column;background:var(--s2);border-radius:12px;padding:3px}.seg button{padding:7px 12px;border-radius:9px;font-size:.84rem;font-weight:700;color:var(--muted)}.seg button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.chart{width:100%;height:auto;display:block}.chart .gl{stroke:var(--line);stroke-width:1}.chart .rf{stroke:var(--muted);stroke-width:1;stroke-dasharray:4 4;opacity:.7}.chart .yl{font-size:9.5px;fill:var(--muted);text-anchor:end}.chart .xl{font-size:9.5px;fill:var(--muted);font-weight:600}.chart .rl{font-size:8.5px;fill:var(--muted);text-anchor:end}
+.chart .ls{fill:none;stroke:var(--accent);stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round}.chart .ld{fill:none;stroke:var(--dia);stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round}
+.chart .ps{fill:var(--accent);stroke:var(--surface);stroke-width:1.5}.chart .pd{fill:var(--dia);stroke:var(--surface);stroke-width:1.5}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.76rem;color:var(--muted);padding:2px 8px 4px}.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
+.empty{text-align:center;color:var(--muted);padding:26px 18px}.empty.small{padding:20px 14px;font-size:.9rem}
+.sec{font-size:.78rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:22px 4px 8px}
+.day{font-size:.8rem;color:var(--muted);font-weight:700;margin:16px 4px 6px}
+.list{background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:var(--shadow)}
+.row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 16px;border-bottom:1px solid var(--line);min-height:60px}.row:last-child{border-bottom:0}
+.row .tm{width:54px;flex:none}.row .tm b{display:block;font-weight:700;font-variant-numeric:tabular-nums}.row .tm small{color:var(--muted);font-size:.72rem}
+.row .vl{flex:1;min-width:0}.row .vl b{font-size:1.3rem;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}.row .vl small{color:var(--muted);font-size:.8rem;margin-left:8px;white-space:nowrap}.row .vl em{display:block;font-style:normal;color:var(--muted);font-size:.78rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tag{flex:none;font-size:.72rem;font-weight:800;border-radius:99px;padding:4px 10px;color:var(--cc);background:color-mix(in srgb,var(--cc) 14%,transparent)}
+.fab{position:fixed;right:max(16px,calc(50% - 304px));bottom:calc(env(safe-area-inset-bottom) + 18px);width:62px;height:62px;border-radius:21px;background:var(--accent);color:var(--on);display:grid;place-items:center;box-shadow:0 12px 26px rgba(190,18,60,.4);z-index:20}.fab svg{width:28px;height:28px}
+.sheet-wrap{position:fixed;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center;pointer-events:none}
+.backdrop{position:absolute;inset:0;background:rgba(20,6,10,.55);opacity:0;transition:opacity .2s}
+.sheet{position:relative;width:100%;max-width:640px;max-height:92dvh;overflow-y:auto;background:var(--surface);border-radius:26px 26px 0 0;padding:10px 18px calc(22px + env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .25s cubic-bezier(.2,.8,.2,1);pointer-events:auto;overscroll-behavior:contain}
+.sheet-wrap.open{pointer-events:auto}.sheet-wrap.open .backdrop{opacity:1}.sheet-wrap.open .sheet{transform:none}
+.grab{width:42px;height:5px;border-radius:5px;background:var(--line);margin:0 auto 12px}.sheet h3{margin:4px 0 14px;font-size:1.2rem}.sheet p{color:var(--muted);margin:0 0 14px}
+.fld{display:block;margin-bottom:14px}.fld span{display:block;font-size:.8rem;color:var(--muted);font-weight:650;margin-bottom:6px}
+.fld input{width:100%;padding:13px 14px;border-radius:13px;border:1px solid var(--line);background:var(--bg);min-height:48px}
+.fld input.big{font-size:2rem;font-weight:800;text-align:center;padding:12px 8px;letter-spacing:-.02em}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btns{display:flex;gap:10px;margin-top:6px}.btn{flex:1;padding:14px 16px;border-radius:15px;font-weight:700;background:var(--s2);text-align:center}.btn.primary{background:var(--accent);color:var(--on)}.btn.danger{background:color-mix(in srgb,#dc2626 14%,transparent);color:#dc2626}
+@media(prefers-color-scheme:dark){.btn.danger{color:#f87171}}
+.mrow{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:14px 16px;border-bottom:1px solid var(--line);min-height:58px}.mrow:last-child{border-bottom:0}.mrow .rt{flex:1}.mrow b{display:block;font-weight:650}.mrow small{color:var(--muted);font-size:.8rem}.mrow.bad b{color:#dc2626}
+.note{font-size:.8rem;color:var(--muted);line-height:1.5;margin:16px 4px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 96px);background:#2a1218;color:#fff;border-radius:14px;padding:12px 16px;display:flex;gap:14px;align-items:center;z-index:70;box-shadow:0 10px 30px rgba(0,0,0,.3);max-width:92vw;font-size:.92rem}.toast button{color:#fda4af;font-weight:800}
+#printArea{display:none}
+@media print{
+ body{background:#fff;color:#000}#app,.fab,.sheet-wrap,.toast{display:none!important}
+ #printArea{display:block;font:12pt/1.4 system-ui,sans-serif;color:#000}
+ #printArea h1{font-size:18pt;margin:0 0 4pt}#printArea p{margin:0 0 8pt;color:#333}
+ #printArea table{width:100%;border-collapse:collapse}#printArea th,#printArea td{border-bottom:1px solid #bbb;padding:4pt 6pt;text-align:left}#printArea th{font-size:10pt;text-transform:uppercase;color:#333}
+}
+</style>
+</head>
+<body>
+<div id="app"><header class="hdr"><h1>Blutdruck</h1><button class="ib" data-act="menu" aria-label="Menü"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="19" cy="12" r="1.9"/></svg></button></header><main id="main"></main></div>
+<div id="fabholder"></div>
+<div id="printArea"></div>
+<script>
+(()=>{
+'use strict';
+const KEY='blutdruck-app-v1';
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-3);
+const p2=n=>String(n).padStart(2,'0');
+const nowTs=()=>{const d=new Date();return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}T${p2(d.getHours())}:${p2(d.getMinutes())}`};
+const T=e=>new Date(e.ts).getTime();
+const fmtD=iso=>{const [y,m,d]=iso.split('-');return `${d}.${m}.${y}`};
+const dayLbl=ts=>new Date(ts).toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+const shortLbl=ts=>new Date(ts).toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit'});
+const part=ts=>{const h=+ts.slice(11,13);return h<12?'Morgens':h<17?'Tagsüber':'Abends'};
+const cat=(s,d)=>{
+ if(s>=180||d>=110)return ['Stark erhöht','--c-hi3'];
+ if(s>=160||d>=100)return ['Deutlich erhöht','--c-hi2'];
+ if(s>=140||d>=90)return ['Erhöht','--c-hi'];
+ if(s>=130||d>=85)return ['Hoch-normal','--c-hn'];
+ if(s<100||d<60)return ['Niedrig','--c-low'];
+ if(s>=120||d>=80)return ['Normal','--c-norm'];
+ return ['Optimal','--c-opt'];
+};
+const tag=(s,d)=>{const [n,c]=cat(s,d);return `<span class="tag" style="--cc:var(${c})">${n}</span>`};
+
+/* ---------- Zustand ---------- */
+function norm(d){
+ const arr=d&&Array.isArray(d.entries)?d.entries:[];
+ const out=arr.map(e=>({id:String(e&&e.id||uid()),ts:String(e&&e.ts||''),sys:Number(e&&e.sys),dia:Number(e&&e.dia),pulse:e&&e.pulse!=null&&e.pulse!==''?Number(e.pulse):null,note:String(e&&e.note||'')}))
+  .filter(e=>/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(e.ts)&&Number.isFinite(e.sys)&&Number.isFinite(e.dia));
+ out.forEach(e=>{if(!Number.isFinite(e.pulse))e.pulse=null});
+ out.sort((a,b)=>a.ts.localeCompare(b.ts));
+ return {app:'blutdruck',v:1,entries:out};
+}
+let state=(()=>{try{const t=localStorage.getItem(KEY);if(t)return norm(JSON.parse(t))}catch(e){}return norm(null)})();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){toast('Speichern nicht möglich (Speicher gesperrt oder voll)')}}
+const ui={range:'30'};
+const snap=()=>JSON.stringify(state);
+const restore=s=>{state=norm(JSON.parse(s));save();render()};
+
+/* ---------- Auswertung ---------- */
+function avg(list){
+ if(!list.length)return null;
+ const m=k=>list.reduce((a,e)=>a+e[k],0)/list.length,pl=list.filter(e=>e.pulse!=null);
+ return {sys:Math.round(m('sys')),dia:Math.round(m('dia')),pulse:pl.length?Math.round(pl.reduce((a,e)=>a+e.pulse,0)/pl.length):null,n:list.length};
+}
+const since=days=>state.entries.filter(e=>T(e)>=Date.now()-days*864e5);
+
+/* ---------- Diagramm ---------- */
+function chart(){
+ const lim=ui.range==='7'?7:ui.range==='30'?30:null;
+ const d=lim?since(lim):state.entries;
+ if(d.length<2)return '<div class="empty small">Für das Diagramm braucht es mindestens zwei Messungen im gewählten Zeitraum.</div>';
+ const W=360,H=215,L=34,R=10,Tp=14,B=28,pw=W-L-R,ph=H-Tp-B;
+ const t0=T(d[0]),t1=T(d[d.length-1]),span=Math.max(t1-t0,36e5);
+ let lo=Math.min(80,...d.map(e=>e.dia))-10,hi=Math.max(140,...d.map(e=>e.sys))+10;
+ lo=Math.floor(lo/10)*10;hi=Math.ceil(hi/10)*10;
+ const step=hi-lo>110?40:20,X=t=>L+(t-t0)/span*pw,Y=v=>Tp+(hi-v)/(hi-lo)*ph;
+ let o=`<svg viewBox="0 0 ${W} ${H}" class="chart" role="img" aria-label="Verlauf von oberem und unterem Blutdruck">`;
+ for(let v=Math.ceil(lo/step)*step;v<=hi;v+=step)o+=`<line class="gl" x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}"/><text class="yl" x="${L-5}" y="${Y(v)+3}">${v}</text>`;
+ o+=`<line class="rf" x1="${L}" x2="${W-R}" y1="${Y(135)}" y2="${Y(135)}"/><line class="rf" x1="${L}" x2="${W-R}" y1="${Y(85)}" y2="${Y(85)}"/>`;
+ const pts=k=>d.map(e=>`${X(T(e)).toFixed(1)},${Y(e[k]).toFixed(1)}`).join(' ');
+ o+=`<polyline class="ld" points="${pts('dia')}"/><polyline class="ls" points="${pts('sys')}"/>`;
+ const r=d.length>45?2.2:3.6;
+ d.forEach((e,i)=>{const x=X(T(e)).toFixed(1),last=i===d.length-1;
+  if(d.length<=45||last)o+=`<circle class="ps" cx="${x}" cy="${Y(e.sys).toFixed(1)}" r="${last?4.6:r}"/><circle class="pd" cx="${x}" cy="${Y(e.dia).toFixed(1)}" r="${last?4.6:r}"/>`;
+  if(d.length<=150)o+=`<rect x="${(x-7).toFixed(1)}" y="${Tp}" width="14" height="${ph}" fill="transparent" data-act="pt" data-id="${e.id}"/>`});
+ const dl=t=>new Date(t).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'});
+ o+=`<text class="xl" x="${L}" y="${H-8}">${dl(t0)}</text><text class="xl" x="${W-R}" y="${H-8}" text-anchor="end">${dl(t1)}</text></svg>`;
+ return o;
+}
+
+/* ---------- Ansicht ---------- */
+function render(){
+ const E=state.entries,last=E[E.length-1];let h='';
+ if(!last){
+  h+=`<section class="hero empty"><div class="lbl">Dein Blutdruck-Tagebuch</div><div class="big">Noch keine Messung</div><button data-act="add">Erste Messung eintragen</button></section>`;
+ }else{
+  h+=`<section class="hero"><div class="lbl">Letzte Messung · ${esc(shortLbl(last.ts))} um ${last.ts.slice(11)}</div><div class="big">${last.sys}/${last.dia}<small>mmHg</small></div><div class="row2"><span class="pill">${last.pulse!=null?'♥ Puls '+last.pulse:'ohne Puls'}</span><span class="pill">${cat(last.sys,last.dia)[0]}</span></div></section>`;
+  const a7=avg(since(7)),a30=avg(since(30));
+  const k=(t,a)=>`<div class="card kpi"><div class="k">${t}</div><div class="v">${a?a.sys+'/'+a.dia:'–'}</div><div class="s">${a?(a.pulse!=null?'Puls '+a.pulse+' · ':'')+a.n+' Mess.':'keine Daten'}</div></div>`;
+  h+=`<div class="grid3">${k('Ø 7 Tage',a7)}${k('Ø 30 Tage',a30)}<div class="card kpi"><div class="k">Messungen</div><div class="v">${E.length}</div><div class="s">seit ${esc(fmtD(E[0].ts.slice(0,10)))}</div></div></div>`;
+  h+=`<section class="card chartcard"><div class="top"><h2>Verlauf</h2><div class="seg">${[['7','7 Tage'],['30','30 Tage'],['all','Alle']].map(([v,l])=>`<button data-act="range" data-v="${v}" class="${ui.range===v?'on':''}">${l}</button>`).join('')}</div></div>${chart()}<div class="legend"><span><i style="background:var(--accent)"></i>Oben (systolisch)</span><span><i style="background:var(--dia)"></i>Unten (diastolisch)</span><span>- - Richtwert Heimmessung 135/85</span></div></section>`;
+  const by={};E.slice().reverse().forEach(e=>(by[e.ts.slice(0,10)]=by[e.ts.slice(0,10)]||[]).push(e));
+  h+='<div class="sec">Messungen</div>';
+  h+=Object.keys(by).map(d=>`<div class="day">${esc(dayLbl(d+'T12:00'))}</div><div class="list">${by[d].map(e=>`<button class="row" data-act="edit" data-id="${e.id}"><span class="tm"><b>${e.ts.slice(11)}</b><small>${part(e.ts)}</small></span><span class="vl"><b>${e.sys}/${e.dia}</b>${e.pulse!=null?`<small>♥ ${e.pulse}</small>`:''}${e.note?`<em>${esc(e.note)}</em>`:''}</span>${tag(e.sys,e.dia)}</button>`).join('')}</div>`).join('');
+  h+=`<p class="note">Die Einstufung folgt den Richtwerten der europäischen Bluthochdruck-Leitlinien und ist keine Diagnose. Besprich deine Werte mit deiner Ärztin oder deinem Arzt.</p>`;
+ }
+ $('#main').innerHTML=h;
+ $('#fabholder').innerHTML=`<button class="fab" data-act="add" aria-label="Messung eintragen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>`;
+}
+
+/* ---------- Fenster + Zurück-Taste ---------- */
+function toast(msg,undo){
+ const old=$('.toast');if(old)old.remove();
+ const t=document.createElement('div');t.className='toast';t.setAttribute('role','status');
+ t.innerHTML=`<span>${esc(msg)}</span>${undo?'<button>Rückgängig</button>':''}`;
+ document.body.appendChild(t);
+ if(undo)t.querySelector('button').onclick=()=>{undo();t.remove()};
+ setTimeout(()=>t.remove(),undo?6000:2800);
+}
+let sheetEl=null,skipPop=false,pendingCb=null;
+const hs=()=>{const s=history.state;return s&&typeof s==='object'?s:{}};
+function openSheet(html,focus){
+ if(sheetEl)hideSheet();
+ const w=document.createElement('div');w.className='sheet-wrap';
+ w.innerHTML=`<div class="backdrop" data-act="close"></div><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${html}</div>`;
+ document.body.appendChild(w);sheetEl=w;
+ requestAnimationFrame(()=>requestAnimationFrame(()=>{w.classList.add('open');if(focus){const f=$(focus,w);f&&f.focus()}}));
+ if(!hs().sheet){try{history.pushState({sheet:true},'')}catch(e){}}
+}
+function hideSheet(){if(sheetEl){const w=sheetEl;sheetEl=null;w.classList.remove('open');setTimeout(()=>w.remove(),260)}}
+function closeSheet(cb){
+ hideSheet();
+ setTimeout(()=>{
+  if(!sheetEl&&hs().sheet){skipPop=true;pendingCb=cb||null;try{history.back()}catch(e){skipPop=false;pendingCb=null;cb&&cb()}}
+  else if(cb)cb();
+ },0);
+}
+const sv=s=>sheetEl?$(s,sheetEl):null;
+function confirmSheet(title,text,label,fn){
+ openSheet(`<h3>${esc(title)}</h3><p>${esc(text)}</p><div class="btns"><button class="btn" data-act="close">Abbrechen</button><button class="btn danger" id="cf">${esc(label)}</button></div>`);
+ sv('#cf').onclick=()=>closeSheet(fn);
+}
+
+/* ---------- Messung erfassen ---------- */
+function entrySheet(id){
+ const e=id?state.entries.find(x=>x.id===id):null,isNew=!e;
+ const ts=e?e.ts:nowTs();
+ openSheet(`<h3>${isNew?'Neue Messung':'Messung bearbeiten'}</h3>
+ <div class="two"><label class="fld"><span>Oben (systolisch)</span><input id="f-sys" class="big" inputmode="numeric" maxlength="3" autocomplete="off" placeholder="120" value="${e?e.sys:''}"></label>
+ <label class="fld"><span>Unten (diastolisch)</span><input id="f-dia" class="big" inputmode="numeric" maxlength="3" autocomplete="off" placeholder="80" value="${e?e.dia:''}"></label></div>
+ <label class="fld"><span>Puls (optional)</span><input id="f-pul" inputmode="numeric" maxlength="3" autocomplete="off" placeholder="z. B. 68" value="${e&&e.pulse!=null?e.pulse:''}"></label>
+ <div class="two"><label class="fld"><span>Datum</span><input id="f-date" type="date" value="${ts.slice(0,10)}"></label><label class="fld"><span>Uhrzeit</span><input id="f-time" type="time" value="${ts.slice(11)}"></label></div>
+ <label class="fld"><span>Notiz (optional)</span><input id="f-note" maxlength="80" autocomplete="off" placeholder="z. B. nach dem Aufstehen, nach Tablette" value="${esc(e?e.note:'')}"></label>
+ <div class="btns">${isNew?'':`<button class="btn danger" data-act="del" data-id="${e.id}">Löschen</button>`}<button class="btn primary" data-act="save" data-id="${isNew?'':e.id}">Speichern</button></div>`,isNew?'#f-sys':null);
+ const s=sv('#f-sys');if(s)s.addEventListener('input',()=>{if(s.value.length>=3)sv('#f-dia').focus()});
+}
+function intOf(sel){const v=sv(sel).value.trim();return v===''?null:(/^\d{1,3}$/.test(v)?Number(v):NaN)}
+
+/* ---------- Daten: Export / Import ---------- */
+function download(name,type,content){
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+}
+function exportCsv(){
+ if(!state.entries.length){toast('Noch keine Messungen vorhanden');return}
+ const safe=s=>{s=String(s||'');if(/^[=+\-@]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"'};
+ const rows=['Datum;Uhrzeit;Systolisch;Diastolisch;Puls;Notiz'].concat(state.entries.map(e=>`${fmtD(e.ts.slice(0,10))};${e.ts.slice(11)};${e.sys};${e.dia};${e.pulse??''};${safe(e.note)}`));
+ download(`blutdruck-${nowTs().slice(0,10)}.csv`,'text/csv;charset=utf-8','﻿'+rows.join('\n'));
+ toast('Tabelle wurde heruntergeladen');
+}
+function exportBackup(){download(`blutdruck-backup-${nowTs().slice(0,10)}.json`,'application/json',JSON.stringify(state,null,1));toast('Backup wurde heruntergeladen')}
+function doPrint(){
+ const E=state.entries;if(!E.length){toast('Noch keine Messungen vorhanden');return}
+ const a7=avg(since(7)),a30=avg(since(30)),aa=avg(E);
+ const av=(t,a)=>a?`${t}: ${a.sys}/${a.dia}${a.pulse!=null?' (Puls '+a.pulse+')':''}`:'';
+ $('#printArea').innerHTML=`<h1>Blutdruck-Messwerte</h1><p>Zeitraum ${esc(fmtD(E[0].ts.slice(0,10)))} bis ${esc(fmtD(E[E.length-1].ts.slice(0,10)))} · ${E.length} Messungen<br>${[av('Ø 7 Tage',a7),av('Ø 30 Tage',a30),av('Ø gesamt',aa)].filter(Boolean).map(esc).join(' · ')}</p><table><thead><tr><th>Datum</th><th>Zeit</th><th>Oben</th><th>Unten</th><th>Puls</th><th>Notiz</th></tr></thead><tbody>${E.map(e=>`<tr><td>${esc(fmtD(e.ts.slice(0,10)))}</td><td>${e.ts.slice(11)}</td><td>${e.sys}</td><td>${e.dia}</td><td>${e.pulse??''}</td><td>${esc(e.note)}</td></tr>`).join('')}</tbody></table>`;
+ closeSheet(()=>setTimeout(()=>window.print(),150));
+}
+function importFail(f,txt){
+ const zip=txt.slice(0,2)==='PK',html=/^<(!doctype|html)/i.test(txt);
+ const hint=zip?'Das ist eine ZIP-Datei. Gebraucht wird eine Backup-Datei (.json).':html?'Das ist eine Webseite, keine Backup-Datei.':!txt?'Die Datei ist leer oder konnte nicht geöffnet werden.':'Der Inhalt ist kein gültiges JSON – die Datei ist evtl. unvollständig oder verändert.';
+ openSheet(`<h3>Datei konnte nicht gelesen werden</h3><p>${esc(hint)}</p><p style="font-size:.85rem">Datei: ${esc(f.name)} · ${Math.round(f.size/1024)} KB<br>Anfang: <code>${esc(txt.slice(0,50)||'(leer)')}</code></p><div class="btns"><button class="btn primary" data-act="close">OK</button></div>`);
+}
+function importText(raw,f){
+ const txt=String(raw||'').replace(/^﻿/,'').trim();let d;
+ try{d=JSON.parse(txt)}catch(e){importFail(f,txt);return}
+ const n=norm(d);
+ if(!n.entries.length){toast('In der Datei wurden keine Messungen gefunden');return}
+ const apply=mode=>{
+  if(mode==='replace')state=n;
+  else{const ids=new Set(state.entries.map(e=>e.id));n.entries.forEach(e=>{if(!ids.has(e.id))state.entries.push(e)});state.entries.sort((a,b)=>a.ts.localeCompare(b.ts))}
+  save();render();toast(`${n.entries.length} Messungen eingelesen`);
+ };
+ if(!state.entries.length){apply('replace');return}
+ openSheet(`<h3>Daten einlesen</h3><p>Die Datei enthält ${n.entries.length} Messungen, in der App sind ${state.entries.length}. Zusammenführen ergänzt nur neue Messungen, Ersetzen überschreibt alles.</p><div class="btns"><button class="btn" id="im-m">Zusammenführen</button><button class="btn danger" id="im-r">Ersetzen</button></div><div class="btns"><button class="btn" data-act="close">Abbrechen</button></div>`);
+ sv('#im-m').onclick=()=>closeSheet(()=>apply('merge'));
+ sv('#im-r').onclick=()=>closeSheet(()=>apply('replace'));
+}
+function pickFile(){
+ const inp=document.createElement('input');inp.type='file';inp.style.display='none';document.body.appendChild(inp);
+ inp.onchange=()=>{const f=inp.files&&inp.files[0];setTimeout(()=>inp.remove(),60000);if(!f)return;const r=new FileReader();r.onerror=()=>importFail(f,'');r.onload=()=>importText(r.result,f);r.readAsText(f)};
+ inp.click();
+}
+function pasteSheet(){
+ openSheet(`<h3>Daten einfügen</h3><p>Öffne die Backup-Datei in einer Text-App, kopiere den ganzen Inhalt und füge ihn hier ein.</p><label class="fld"><span>Inhalt der Datei</span><textarea id="paste" rows="6" style="width:100%;padding:12px;border-radius:13px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:13px monospace"></textarea></label><div class="btns"><button class="btn" data-act="close">Abbrechen</button><button class="btn primary" data-act="pasteGo">Einlesen</button></div>`,'#paste');
+}
+function menuSheet(){
+ openSheet(`<h3>Menü</h3><div class="list" style="box-shadow:none">
+ <button class="mrow" data-act="csv"><span class="rt"><b>Tabelle für die Praxis (CSV)</b><small>Öffnet sich in Excel</small></span></button>
+ <button class="mrow" data-act="print"><span class="rt"><b>Drucken oder als PDF speichern</b><small>Alle Messungen als Liste</small></span></button>
+ <button class="mrow" data-act="backup"><span class="rt"><b>Backup speichern</b><small>Alle Daten als Datei (.json)</small></span></button>
+ <button class="mrow" data-act="import"><span class="rt"><b>Daten importieren</b><small>Backup-Datei auswählen</small></span></button>
+ <button class="mrow" data-act="paste"><span class="rt"><b>Daten einfügen</b><small>Dateiinhalt als Text einfügen</small></span></button>
+ <button class="mrow bad" data-act="wipe"><span class="rt"><b>Alle Daten löschen</b><small>Entfernt alles von diesem Gerät</small></span></button></div>
+ <p class="note" style="margin-top:14px">Deine Messwerte werden nur lokal in dieser App auf deinem Gerät gespeichert – keine Anmeldung, keine Cloud. Beim Deinstallieren oder Löschen der Browserdaten sind sie weg, speichere deshalb ab und zu ein Backup.</p><p class="note" style="text-align:center;margin-top:0">Version 1</p>`);
+}
+
+/* ---------- Aktionen ---------- */
+const A={
+ close:()=>closeSheet(),
+ menu:()=>menuSheet(),
+ add:()=>entrySheet(null),
+ edit:t=>entrySheet(t.dataset.id),
+ range:t=>{ui.range=t.dataset.v;render()},
+ pt:t=>{const e=state.entries.find(x=>x.id===t.dataset.id);if(e)toast(`${shortLbl(e.ts)} ${e.ts.slice(11)}: ${e.sys}/${e.dia}${e.pulse!=null?', Puls '+e.pulse:''}`)},
+ save:t=>{
+  const sys=intOf('#f-sys'),dia=intOf('#f-dia'),pul=intOf('#f-pul'),date=sv('#f-date').value,time=sv('#f-time').value;
+  if(sys==null||dia==null||Number.isNaN(sys)||Number.isNaN(dia)){toast('Bitte oberen und unteren Wert eingeben');return}
+  if(sys<60||sys>260||dia<30||dia>160){toast('Werte außerhalb des plausiblen Bereichs – bitte prüfen');return}
+  if(sys<=dia){toast('Der obere Wert muss größer sein als der untere');return}
+  if(Number.isNaN(pul)||(pul!=null&&(pul<25||pul>220))){toast('Puls bitte zwischen 25 und 220 eingeben');return}
+  if(!date||!time){toast('Bitte Datum und Uhrzeit angeben');return}
+  const rec={id:t.dataset.id||uid(),ts:`${date}T${time}`,sys,dia,pulse:pul,note:sv('#f-note').value.trim()};
+  const i=state.entries.findIndex(x=>x.id===rec.id);
+  if(i>=0)state.entries[i]=rec;else state.entries.push(rec);
+  state.entries.sort((a,b)=>a.ts.localeCompare(b.ts));
+  save();render();closeSheet();toast('Gespeichert');
+ },
+ del:t=>{const s=snap();state.entries=state.entries.filter(x=>x.id!==t.dataset.id);save();render();closeSheet();toast('Messung gelöscht',()=>restore(s))},
+ csv:()=>closeSheet(exportCsv),
+ print:()=>doPrint(),
+ backup:()=>closeSheet(exportBackup),
+ import:()=>closeSheet(pickFile),
+ paste:()=>closeSheet(pasteSheet),
+ pasteGo:()=>{const v=sv('#paste').value;closeSheet(()=>importText(v,{name:'(eingefügter Text)',size:v.length}))},
+ wipe:()=>closeSheet(()=>confirmSheet('Alle Daten löschen?','Alle Messungen werden von diesem Gerät entfernt. Das lässt sich nicht rückgängig machen – speichere vorher ein Backup.','Alles löschen',()=>{state=norm(null);save();render();toast('Alle Daten gelöscht')}))
+};
+document.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(!t)return;const f=A[t.dataset.act];if(f)f(t,e)});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});
+try{history.replaceState({sheet:false},'')}catch(e){}
+window.addEventListener('popstate',()=>{
+ if(skipPop){skipPop=false;const c=pendingCb;pendingCb=null;if(sheetEl)hideSheet();if(c)c();return}
+ if(sheetEl)hideSheet();
+ if(hs().sheet){try{history.replaceState({sheet:false},'')}catch(x){}}
+});
+render();
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
+})();
+</script>
+</body>
+</html>
